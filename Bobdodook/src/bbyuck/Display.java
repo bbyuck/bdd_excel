@@ -21,146 +21,9 @@ public class Display extends JFrame{
 	static String cnpFileName = new String();
 	static String cnpFileDirectory = new String();
     static Font defaultFont = new Font("고딕", Font.BOLD, 20);
-
-	// 쿠팡 파일찾기버튼
-	static class CoupangFileSearchEventHandler implements ActionListener {
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			JFrame dialogFrame = new JFrame();
-			dialogFrame.setSize(350, 250);
-			dialogFrame.setLayout(null);
-
-	        FileDialog dialog = new FileDialog(dialogFrame, "불러오기", FileDialog.LOAD);
-	        dialog.setVisible(true);
-	        coupangFileName = dialog.getFile();
-	        coupangFileDirectory = dialog.getDirectory();
-	        if (coupangFileDirectory != null && coupangFileName != null) {
-		        coupangLabel.setText(coupangFileDirectory + coupangFileName);
-		        coupangLabel.setVisible(true);
-		        
-				// TODO Auto-generated method stub
-		        System.out.println(coupangFileDirectory + coupangFileName);
-	        }
-		}
-	}
-	// 네이버 파일 찾기버튼
-	static class NaverFileSearchEventHandler implements ActionListener {
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			JFrame dialogFrame = new JFrame();
-			dialogFrame.setSize(350, 250);
-			dialogFrame.setLayout(null);
-
-	        FileDialog dialog = new FileDialog(dialogFrame, "불러오기", FileDialog.LOAD);
-	        dialog.setVisible(true);
-	        naverFileName = dialog.getFile();
-	        naverFileDirectory = dialog.getDirectory();
-	        if (naverFileDirectory != null && naverFileName != null) {
-	        	naverLabel.setText(naverFileDirectory + naverFileName);
-	        	naverLabel.setVisible(true);
-		        
-				// TODO Auto-generated method stub
-		        System.out.println(naverFileDirectory + naverFileName);
-	        }
-		}
-	}
 	
-	// CNP 파일 찾기 버튼
-	static class CnpFileSearchEventHandler implements ActionListener {
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			JFrame dialogFrame = new JFrame();
-			dialogFrame.setSize(350, 250);
-			dialogFrame.setLayout(null);
-
-	        FileDialog dialog = new FileDialog(dialogFrame, "불러오기", FileDialog.LOAD);
-	        dialog.setVisible(true);
-	        cnpFileDirectory = dialog.getDirectory();
-	        cnpFileName = dialog.getFile();
-	        
-	        if (cnpFileDirectory != null && cnpFileName != null) {
-		        cnpLabel.setText(cnpFileDirectory + cnpFileName);
-		        cnpLabel.setVisible(true);
-		        
-				// TODO Auto-generated method stub
-		        System.out.println(cnpFileDirectory + cnpFileName);
-	        }
-		}
-	}
-	
-	
-	// Coupang to Cnp 변환 버튼
-	static class CoupangToCnpEventHandler implements ActionListener {
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			// TODO Auto-generated method stub
-			// 쿠팡
-			try {
-				Transform.coupangToCnp(coupangFileDirectory, coupangFileName);
-			}
-			catch (FileNotFoundException fn) {
-				new Popup("파일부터 올려주십쇼");
-			}
-			catch (IOException ex) {
-				ex.printStackTrace();
-				new Popup("열려있는 엑셀 닫으십쇼");
-			} 
-			catch (TransformationComplete c) {
-				// TODO Auto-generated catch block
-				clear();
-				new Popup(c.getMessage());
-			}
-		}
-	}
-	
-	// FromCnp버튼
-	static class FromCnpEventHandler implements ActionListener {
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			// TODO Auto-generated method stub
-			// 쿠팡
-			try {
-//				Transform.coupangPrint(coupangFileDirectory + coupangFileName);
-//				Transform.naverPrint(naverFileDirectory + naverFileName);
-				Transform.cnpToBoth(coupangFileDirectory, coupangFileName, naverFileDirectory, naverFileName, cnpFileDirectory, cnpFileName);
-			}
-			catch (FileNotFoundException fn) {
-				new Popup("파일부터 올려주십쇼");
-			}
-			catch (IOException ex) {
-				ex.printStackTrace();
-				new Popup("열려있는 엑셀 닫으십쇼");
-			} 
-			catch (TransformationComplete c) {
-				// TODO Auto-generated catch block
-				clear();
-				new Popup(c.getMessage());
-			}
-		}
-	}
-	// 네이버 -> cnp
-	static class NaverToCnpEventHandler implements ActionListener {
-		@Override
-		public void actionPerformed(ActionEvent e) {
-			// 쿠팡
-			try {
-				Transform.naverToCnp(naverFileDirectory, naverFileName);
-			}
-			catch (FileNotFoundException fn) {
-				new Popup("파일부터 올려주십쇼");
-			}
-			catch (IOException ex) {
-				ex.printStackTrace();
-				new Popup("열려있는 엑셀 닫으십쇼");
-			} 
-			catch (TransformationComplete c) {
-				// TODO Auto-generated catch block
-				clear();
-				new Popup(c.getMessage());
-			}
-		}
-	}
-	
+    private static final String ERR_MSG = "파일 올리기 / 엑셀 모두 끄고 다시 실행";
+    
 	private static void clear() {
 		coupangFileName = "";
 		coupangFileDirectory = "";
@@ -192,11 +55,11 @@ public class Display extends JFrame{
         this.setLayout(null);
         
         // 버튼 생성
-        JButton naverToCnpBtn = new JButton("네이버->CNPlus 변환");    
+        JButton naverToCnpBtn = new JButton("네이버 -> CNPlus 변환");    
         this.add(naverToCnpBtn);    
-        JButton coupangToCnpBtn = new JButton("쿠팡->CNPlus 변환");    
+        JButton coupangToCnpBtn = new JButton("쿠팡 -> CNPlus 변환");    
         this.add(coupangToCnpBtn);  
-        JButton fromCnpBtn = new JButton("CNPlus->쿠팡, 네이버 변환");    
+        JButton fromCnpBtn = new JButton("쿠팡 & 네이버 운송장 입력");    
         this.add(fromCnpBtn);            
         JButton coupangFileSearchBtn = new JButton("파일 찾기(쿠팡)");
         this.add(coupangFileSearchBtn);
@@ -204,13 +67,19 @@ public class Display extends JFrame{
         this.add(naverFileSearchBtn);
         JButton cnpFileSearchBtn = new JButton("파일 찾기(CNPlus)");
         this.add(cnpFileSearchBtn);
-        JButton countBtn = new JButton("판매량 집계");
+        JButton countBtn = new JButton("테스트");
         this.add(countBtn);
+        JButton cnpToNaverBtn = new JButton("네이버 운송장 입력");
+        this.add(cnpToNaverBtn);
+        JButton cnpToCoupangBtn = new JButton("쿠팡 운송장 입력");
+        this.add(cnpToCoupangBtn);        
         
         // 폰트 변환
         naverToCnpBtn.setFont(defaultFont);        
         fromCnpBtn.setFont(defaultFont);
         coupangToCnpBtn.setFont(defaultFont);
+        cnpToNaverBtn.setFont(defaultFont);
+        cnpToCoupangBtn.setFont(defaultFont);
         
         coupangFileSearchBtn.setFont(defaultFont);
         naverFileSearchBtn.setFont(defaultFont);
@@ -219,22 +88,172 @@ public class Display extends JFrame{
         countBtn.setFont(defaultFont);
         // 버튼 위치
         naverToCnpBtn.setBounds(100, 280, 250, 50);
+        cnpToNaverBtn.setBounds(100, 360, 250, 50);
         coupangToCnpBtn.setBounds(370, 280, 250, 50);
-        fromCnpBtn.setBounds(910, 280, 300, 50);
-        
+        cnpToCoupangBtn.setBounds(370, 360, 250, 50);
+        countBtn.setBounds(910, 280, 300, 50);
+        fromCnpBtn.setBounds(640, 360, 300, 50);
+
+
         coupangFileSearchBtn.setBounds(910, 40, 300, 50);
         naverFileSearchBtn.setBounds(910, 110, 300, 50);
         cnpFileSearchBtn.setBounds(910, 180, 300, 50);
-        countBtn.setBounds(910, 360, 300, 50);
 
         // 버튼별 이벤트 핸들러
-        coupangFileSearchBtn.addActionListener(new CoupangFileSearchEventHandler());
-        naverFileSearchBtn.addActionListener(new NaverFileSearchEventHandler());
-        cnpFileSearchBtn.addActionListener(new CnpFileSearchEventHandler());
-        coupangToCnpBtn.addActionListener(new CoupangToCnpEventHandler());
-        naverToCnpBtn.addActionListener(new NaverToCnpEventHandler());
-        fromCnpBtn.addActionListener(new FromCnpEventHandler());
+        coupangFileSearchBtn.addActionListener(new ActionListener() {
+    		@Override
+    		public void actionPerformed(ActionEvent e) {
+    			JFrame dialogFrame = new JFrame();
+    			dialogFrame.setSize(350, 250);
+    			dialogFrame.setLayout(null);
+
+    	        FileDialog dialog = new FileDialog(dialogFrame, "불러오기", FileDialog.LOAD);
+    	        dialog.setVisible(true);
+    	        coupangFileName = dialog.getFile();
+    	        coupangFileDirectory = dialog.getDirectory();
+    	        if (coupangFileDirectory != null && coupangFileName != null) {
+    		        coupangLabel.setText(coupangFileDirectory + coupangFileName);
+    		        coupangLabel.setVisible(true);
+    		        
+    				// TODO Auto-generated method stub
+    		        System.out.println(coupangFileDirectory + coupangFileName);
+    	        }
+    		}
+        });
+        naverFileSearchBtn.addActionListener(new ActionListener() {
+    		@Override
+    		public void actionPerformed(ActionEvent e) {
+    			JFrame dialogFrame = new JFrame();
+    			dialogFrame.setSize(350, 250);
+    			dialogFrame.setLayout(null);
+
+    	        FileDialog dialog = new FileDialog(dialogFrame, "불러오기", FileDialog.LOAD);
+    	        dialog.setVisible(true);
+    	        naverFileName = dialog.getFile();
+    	        naverFileDirectory = dialog.getDirectory();
+    	        if (naverFileDirectory != null && naverFileName != null) {
+    	        	naverLabel.setText(naverFileDirectory + naverFileName);
+    	        	naverLabel.setVisible(true);
+    		        
+    				// TODO Auto-generated method stub
+    		        System.out.println(naverFileDirectory + naverFileName);
+    	        }
+    		}
+        });
+        cnpFileSearchBtn.addActionListener(new ActionListener() {
+    		@Override
+    		public void actionPerformed(ActionEvent e) {
+    			JFrame dialogFrame = new JFrame();
+    			dialogFrame.setSize(350, 250);
+    			dialogFrame.setLayout(null);
+
+    	        FileDialog dialog = new FileDialog(dialogFrame, "불러오기", FileDialog.LOAD);
+    	        dialog.setVisible(true);
+    	        cnpFileDirectory = dialog.getDirectory();
+    	        cnpFileName = dialog.getFile();
+    	        
+    	        if (cnpFileDirectory != null && cnpFileName != null) {
+    		        cnpLabel.setText(cnpFileDirectory + cnpFileName);
+    		        cnpLabel.setVisible(true);
+    		        
+    				// TODO Auto-generated method stub
+    		        System.out.println(cnpFileDirectory + cnpFileName);
+    	        }
+    		}
+        });
         
+        coupangToCnpBtn.addActionListener(new ActionListener() {
+    		@Override
+    		public void actionPerformed(ActionEvent e) {
+    			// TODO Auto-generated method stub
+    			// 쿠팡
+    			try {
+    				Transform.coupangToCnp(coupangFileDirectory, coupangFileName);
+    			}
+    			catch (IOException ex) {
+    				ex.printStackTrace();
+    				new Popup(ERR_MSG);
+    			} 
+    			catch (TransformationComplete c) {
+    				// TODO Auto-generated catch block
+    				clear();
+    				new Popup(c.getMessage());
+    			}
+    		}
+        });
+        naverToCnpBtn.addActionListener(new ActionListener() {
+    		@Override
+    		public void actionPerformed(ActionEvent e) {
+    			// 쿠팡
+    			try {
+    				Transform.naverToCnp(naverFileDirectory, naverFileName);
+    			}
+    			catch (IOException ex) {
+    				ex.printStackTrace();
+    				new Popup(ERR_MSG);
+    			} 
+    			catch (TransformationComplete c) {
+    				// TODO Auto-generated catch block
+    				clear();
+    				new Popup(c.getMessage());
+    			}
+    		}
+        });
+        cnpToCoupangBtn.addActionListener(new ActionListener() {
+    		@Override
+    		public void actionPerformed(ActionEvent e) {
+    			// TODO Auto-generated method stub
+    			try {
+    				Transform.cnpToCoupang(coupangFileDirectory, coupangFileName, cnpFileDirectory, cnpFileName);
+    			}
+    			catch (IOException ex) {
+    				ex.printStackTrace();
+    				new Popup(ERR_MSG);
+    			} 
+    			catch (TransformationComplete c) {
+    				// TODO Auto-generated catch block
+    				clear();
+    				new Popup(c.getMessage());
+    			}
+    		}
+        });
+        cnpToNaverBtn.addActionListener(new ActionListener() {
+    		@Override
+    		public void actionPerformed(ActionEvent e) {
+    			// TODO Auto-generated method stub
+    			try {
+    				Transform.cnpToNaver(naverFileDirectory, naverFileName, cnpFileDirectory, cnpFileName);
+    			}
+    			catch (IOException ex) {
+    				ex.printStackTrace();
+    				new Popup(ERR_MSG);
+    			} 
+    			catch (TransformationComplete c) {
+    				// TODO Auto-generated catch block
+    				clear();
+    				new Popup(c.getMessage());
+    			}
+    		}
+        });
+        fromCnpBtn.addActionListener(new ActionListener() {
+    		@Override
+    		public void actionPerformed(ActionEvent e) {
+    			// TODO Auto-generated method stub
+    			try {
+    				Transform.cnpToBoth(coupangFileDirectory, coupangFileName, naverFileDirectory, naverFileName, cnpFileDirectory, cnpFileName);
+    			}
+    			catch (IOException ex) {
+    				ex.printStackTrace();
+    				new Popup(ERR_MSG);
+    			} 
+    			catch (TransformationComplete c) {
+    				// TODO Auto-generated catch block
+    				clear();
+    				new Popup(c.getMessage());
+    			}
+    		}
+        });
+
         JLabel testLabel = new JLabel();
         this.add(testLabel);
         testLabel.setFont(defaultFont);
@@ -243,7 +262,6 @@ public class Display extends JFrame{
         countBtn.addActionListener(new ActionListener() {
 	    		public void actionPerformed(ActionEvent e) {
 	    			// TODO Auto-generated method stub
-	    			testLabel.setText(Transform.coupangDict.size() + "");
 	    			testLabel.setVisible(true);
 	    		}
 	        });

@@ -6,8 +6,6 @@ import java.awt.event.ActionListener;
 import java.io.IOException;
 
 import javax.swing.*;
-
-import bbyuck.Display.CoupangToCnpEventHandler;
 import bbyuck.event.TransformationComplete;
 
 
@@ -20,15 +18,15 @@ public class Popup extends JFrame {
 	        setContentPane(NewWindowContainer);
 	        setLayout(null);
 	        
-	        JLabel complete = new JLabel(prompt);
+	        JLabel message = new JLabel(prompt);
 	        JButton okBtn = new JButton("»Æ¿Œ");
 	        
-	        complete.setBounds(190, 20, 250, 50);
-	        complete.setFont(defaultFont);
+	        message.setBounds(120, 20, 380, 50);
+	        message.setFont(defaultFont);
 	        okBtn.setBounds(245, 75, 100, 50);
 	        okBtn.setFont(defaultFont);
 	        
-	        NewWindowContainer.add(complete);
+	        NewWindowContainer.add(message);
 	        okBtn.addActionListener(new ActionListener() {
 	    		public void actionPerformed(ActionEvent e) {
 	    			// TODO Auto-generated method stub
