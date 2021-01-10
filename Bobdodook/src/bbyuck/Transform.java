@@ -38,23 +38,76 @@ class Pair implements Comparable<Pair>{
 public class Transform {
 	private static HashMap<String, String> coupangDict;
 	private static HashMap<String, Integer> coupangCount;
+	
+	private static HashMap<String, String> naverProductDict;
+	private static HashMap<String, String> naverOptionDict;
+	private static HashMap<String, Integer> naverCount;
+	
 	// 쿠팡 제목 바꾸는 엑셀파일
 	private static final String COUPANG_DICT_URI = "./coupangDict.xlsx";
-	private static final String NAVER_DICT_URI = "./naverDict.xlsc";
+	private static final String NAVER_DICT_URI = "./naverDict.xlsx";
 	private static final String TEST_COUPANG = "C:\\Users\\k9410\\OneDrive\\바탕 화면\\밥도둑세상 프로젝트\\상품명.xlsx";
+	private static final String TEST_NAVER = "C:\\Users\\k9410\\OneDrive\\바탕 화면\\밥도둑세상 프로젝트\\naverDict.xlsx";
 	private static final Integer COUPANG_OPTION_START_IDX = 10;
 	private static final String COURIER = "CJ대한통운";
 
+	private static void test() {
+		for (Entry<String, String> entry : coupangDict.entrySet()) {
+			System.out.println(entry.getKey() + " " + entry.getValue());
+		}
+	}
+	
 	public static void init() throws IOException {
 		coupangDict = new HashMap<>();
 		coupangCount = new HashMap<>();
-		readCoupangProducts();
 		
+		naverProductDict = new HashMap<>();
+		naverOptionDict = new HashMap<>();
+		naverCount = new HashMap<>();
+		
+		readCoupangProducts();
+		readNaverProducts();
 	}
 	
-	private static void readCoupangProducts() throws IOException{
-//		FileInputStream fi = new FileInputStream(COUPANG_DICT_URI);
-		FileInputStream fi = new FileInputStream(TEST_COUPANG);
+	private static void readNaverProducts() throws IOException {
+		FileInputStream fi = new FileInputStream(NAVER_DICT_URI);
+//		FileInputStream fi = new FileInputStream(TEST_NAVER);
+		@SuppressWarnings("resource")
+		XSSFWorkbook workbook = new XSSFWorkbook(fi);
+		XSSFSheet sheet = workbook.getSheetAt(0); // 해당 엑셀파일의 시트수
+		int rows = sheet.getPhysicalNumberOfRows(); // 해당 시트의 행의 개수
+		
+		// 파싱
+		for (int rowIdx = 1; rowIdx < rows; rowIdx++) {
+			XSSFRow row = sheet.getRow(rowIdx); // 각 행을 읽어온다
+
+			if (row != null) {
+
+				if (row.getCell(0) == null) {
+					// 옵션 ->			
+					XSSFCell cell = row.getCell(2);
+					String key = cell.getStringCellValue();
+					cell = row.getCell(3);
+					String value = cell.getStringCellValue();
+					naverOptionDict.put(key, value);
+					naverCount.put(value, 0);
+				}
+				else {
+					// 상품명 ->
+					XSSFCell cell = row.getCell(0);
+					String key = cell.getStringCellValue();
+					cell = row.getCell(1);
+					String value = cell.getStringCellValue();
+					naverProductDict.put(key, value);
+					naverCount.put(value, 0);
+				}
+			}
+		}
+	}
+	
+	private static void readCoupangProducts() throws IOException {
+		FileInputStream fi = new FileInputStream(COUPANG_DICT_URI);
+//		FileInputStream fi = new FileInputStream(TEST_COUPANG);
 		@SuppressWarnings("resource")
 		XSSFWorkbook workbook = new XSSFWorkbook(fi);
 		XSSFSheet sheet = workbook.getSheetAt(0); // 해당 엑셀파일의 시트수
@@ -98,27 +151,50 @@ public class Transform {
 		int rows = sheet.getPhysicalNumberOfRows(); // 해당 시트의 행의 개수
 //		System.out.println(rows);
 		
+		XSSFRow row = sheet.getRow(0); // 목록행 읽어오기
+		int cells = row.getPhysicalNumberOfCells();
+		
+		int receiverNameIdx = -1;
+		int receiverPhoneIdx = -1;
+		int receiverAddressIdx = -1;
+		int productNameIdx = -1;
+		int etcIdx = -1;
+		int idIdx = -1;
+		int quantityIdx = -1;
+		
+		for (int colIdx = 0; colIdx < cells; colIdx++) {
+			XSSFCell cell = row.getCell(colIdx);
+			String menu = cell.getStringCellValue();
+			if (menu.equals("구매수(수량)")) quantityIdx = colIdx;
+			if (menu.equals("번호")) idIdx = colIdx;
+			if (menu.equals("수취인이름")) receiverNameIdx = colIdx;
+			if (menu.equals("수취인전화번호")) receiverPhoneIdx = colIdx;
+			if (menu.equals("수취인 주소")) receiverAddressIdx = colIdx;
+			if (menu.equals("노출상품명(옵션명)")) productNameIdx = colIdx;
+			if (menu.equals("배송메세지")) etcIdx = colIdx;
+		}
+
+		
 		// 파싱
 		for (int rowIdx = 1; rowIdx < rows; rowIdx++) {
-			XSSFRow row = sheet.getRow(rowIdx); // 각 행을 읽어온다
+			row = sheet.getRow(rowIdx); // 각 행을 읽어온다
 			CoupangColumnDto coupangData = new CoupangColumnDto();
 			CnpInputDto cnpInput = new CnpInputDto();
 			
 			if (row != null) {
-				int cells = row.getPhysicalNumberOfCells();
+				String productName = row.getCell(12).getStringCellValue();
 				
 				// 셀에 담겨있는 값을 읽는다.
 				// 번호
-				Integer thisNum = Integer.parseInt(row.getCell(0).getStringCellValue());
-				
+				Integer thisNum = Integer.parseInt(row.getCell(idIdx).getStringCellValue());
 				// 묶음 배송
 				if (thisNum.equals(coupangLs.size())) {
 					// 주문 내용 변경하는 로직(아마 기존 ls에서 get해서 그 object 꺼내와서 거기에 concat 하는 방식)
 					coupangData = coupangLs.get(thisNum - 1);
 					String displayedProductName = coupangData.getDisplayedProductName();
 					
-					String thisRowDisplayedProductName = row.getCell(12).getStringCellValue();
-					Integer quantity = Integer.parseInt(row.getCell(22).getStringCellValue());
+					String thisRowDisplayedProductName = row.getCell(productNameIdx).getStringCellValue();
+					Integer quantity = Integer.parseInt(row.getCell(quantityIdx).getStringCellValue());
 
 					// 선택사항
 					if (thisRowDisplayedProductName.contains("선택사항")) {
@@ -127,20 +203,13 @@ public class Transform {
 						String ans = option.substring(COUPANG_OPTION_START_IDX, option.length() - 2);
 						if (quantity == 1) coupangData.setDisplayedProductName(displayedProductName + " // " + ans);
 						else coupangData.setDisplayedProductName(displayedProductName + " // " + ans + " (" + quantity + "개)");
-						
-						for (Entry<String, String> entry : coupangDict.entrySet()) {
-							if (thisRowDisplayedProductName.equals(ans)) {
-								coupangCount.replace(entry.getValue(), coupangCount.get(entry.getValue()) + 1);
-								break;
-							}
-						}
-						
+						coupangCount.replace(ans, coupangCount.get(ans) + quantity);		
 					}
 					else {
 						thisRowDisplayedProductName = coupangDict.get(thisRowDisplayedProductName);
 						if (quantity == 1) coupangData.setDisplayedProductName(displayedProductName + " // " + thisRowDisplayedProductName);
 						else coupangData.setDisplayedProductName(displayedProductName + " // " + thisRowDisplayedProductName + " (" + quantity + "개)");
-						coupangCount.replace(thisRowDisplayedProductName, coupangCount.get(thisRowDisplayedProductName) + 1);
+						coupangCount.replace(thisRowDisplayedProductName, coupangCount.get(thisRowDisplayedProductName) + quantity);
 					}
 					
 					continue;
@@ -148,20 +217,20 @@ public class Transform {
 				coupangData.setNum(thisNum);
 				
 				// 구매수
-				int quantity = Integer.parseInt(row.getCell(22).getStringCellValue());
+				int quantity = Integer.parseInt(row.getCell(quantityIdx).getStringCellValue());
 				coupangData.setQuantity(quantity);
 				
 				// 수취인이름
-				coupangData.setReceiverName(row.getCell(27).getStringCellValue());
+				coupangData.setReceiverName(row.getCell(receiverNameIdx).getStringCellValue());
 				
 				// 수취인전화번호
-				coupangData.setReceiverPhone(processPhone(row.getCell(28).getStringCellValue()));
+				coupangData.setReceiverPhone(processPhone(row.getCell(receiverPhoneIdx).getStringCellValue()));
 				
 				// 수취인  주소
-				coupangData.setReceiverAddress(row.getCell(30).getStringCellValue());
+				coupangData.setReceiverAddress(row.getCell(receiverAddressIdx).getStringCellValue());
 				
 				// 노출상품명(옵션명)
-				String productName = row.getCell(12).getStringCellValue();
+
 				String val = coupangDict.get(productName);
 				String ans = "쿠 - ";
 				// 선택사항
@@ -172,21 +241,21 @@ public class Transform {
 					
 					for (Entry<String, String> entry : coupangDict.entrySet()) {
 						if (productName.equals(val)) {
-							coupangCount.replace(entry.getValue(), coupangCount.get(entry.getValue()) + 1);
+							coupangCount.replace(entry.getValue(), coupangCount.get(entry.getValue()) + quantity);
 							break;
 						}
 					}
 				}
 				else {
 					productName = coupangDict.get(productName);
-					coupangCount.replace(productName, coupangCount.get(productName) + 1);
+					coupangCount.replace(productName, coupangCount.get(productName) + quantity);
 					ans += productName;
 				}
 				
 				if (quantity == 1) coupangData.setDisplayedProductName(ans);
 				else coupangData.setDisplayedProductName(ans + " (" + quantity + "개)");
 				// 배송메세지
-				coupangData.setDeliveryMessage(row.getCell(31).getStringCellValue());
+				coupangData.setDeliveryMessage(row.getCell(etcIdx).getStringCellValue());
 				coupangLs.add(coupangData);
 			}
 		}
@@ -215,19 +284,45 @@ public class Transform {
 		int rows = sheet.getPhysicalNumberOfRows(); // 해당 시트의 행의 개수
 //		System.out.println(rows);
 		
+		XSSFRow row = sheet.getRow(1); // 목록행 읽어오기
+		int cells = row.getPhysicalNumberOfCells();
+		
+		int idIdx = -1;
+		int receiverNameIdx = -1;
+		int receiverPhoneIdx = -1;
+		int receiverAddressIdx = -1;
+		int productNameIdx = -1;
+		int optionIdx = -1;
+		int etcIdx = -1;
+		int quantityIdx = -1;
+		
+		for (int colIdx = 0; colIdx < cells; colIdx++) {
+			XSSFCell cell = row.getCell(colIdx);
+			String menu = cell.getStringCellValue();
+			if (menu.equals("수량")) quantityIdx = colIdx;
+			if (menu.equals("주문번호")) idIdx = colIdx;
+			if (menu.equals("수취인명")) receiverNameIdx = colIdx;
+			if (menu.equals("수취인연락처1")) receiverPhoneIdx = colIdx;
+			if (menu.equals("배송지")) receiverAddressIdx = colIdx;
+			if (menu.equals("상품명")) productNameIdx = colIdx;
+			if (menu.equals("옵션정보")) optionIdx = colIdx;
+			if (menu.equals("배송메세지")) etcIdx = colIdx;
+		}
+
+		
 		// 파싱
-		for (int rowIdx = 1; rowIdx < rows; rowIdx++) {
-			XSSFRow row = sheet.getRow(rowIdx); // 각 행을 읽어온다
+		for (int rowIdx = 2; rowIdx < rows; rowIdx++) {
+			row = sheet.getRow(rowIdx); // 각 행을 읽어온다
 			NaverColumnDto naverData = new NaverColumnDto();
 			CnpInputDto cnpInput = new CnpInputDto();
 			
 			if (row != null) {				
 				// 셀에 담겨있는 값을 읽는다.
 				// 수취인명
-				String receiverName = row.getCell(6).getStringCellValue();
+				String receiverName = row.getCell(receiverNameIdx).getStringCellValue();
 				// 수취인 연락처
-				String receiverPhone = processPhone(row.getCell(11).getStringCellValue());
-				String orderNum = row.getCell(1).getStringCellValue();
+				String receiverPhone = processPhone(row.getCell(receiverPhoneIdx).getStringCellValue());
+				String orderNum = row.getCell(idIdx).getStringCellValue();
 
 				NaverColumnDto chkDto = map.get(orderNum);
 				
@@ -235,8 +330,31 @@ public class Transform {
 					// 묶음 배송
 					naverData = chkDto;
 					String displayedProductName = naverData.getProductName();
-					String thisRowDisplayedProductName = row.getCell(7).getStringCellValue() + " " + row.getCell(8).getStringCellValue();
-					Integer quantity = (int)row.getCell(9).getNumericCellValue();
+					String thisRowDisplayedProductName = row.getCell(productNameIdx).getStringCellValue();
+					String thisRowProcessedProductName = naverProductDict.get(thisRowDisplayedProductName);
+					Integer quantity = (int)row.getCell(quantityIdx).getNumericCellValue();
+
+					if (row.getCell(optionIdx) != null) {
+						// 옵션이 존재하는 경우
+						String thisRowOption = row.getCell(optionIdx).getStringCellValue();
+						String processedOption = naverOptionDict.get(thisRowOption);
+						
+						if (processedOption != null) {
+							thisRowDisplayedProductName = processedOption;
+							naverCount.replace(processedOption, naverCount.get(processedOption) + quantity);
+						}
+						else {
+							// 옵션 존재 + naverDict에 등록되지 않은 기존 정책따라가는 상품
+							if (thisRowOption.contains("선택사항")) thisRowDisplayedProductName = thisRowOption.substring(6, thisRowOption.length());
+							else thisRowDisplayedProductName += " " + thisRowOption;
+						}
+					}
+					else if (thisRowProcessedProductName != null) {
+						// 옵션이 존재하지 않으면서 naverProductDict에 등록된 제품
+						thisRowDisplayedProductName = thisRowProcessedProductName;
+						naverCount.replace(thisRowProcessedProductName, naverCount.get(thisRowProcessedProductName) + quantity);
+					}
+					
 					
 					if (quantity == 1) naverData.setProductName(displayedProductName + " // " + thisRowDisplayedProductName);
 					else naverData.setProductName(displayedProductName + " // " + thisRowDisplayedProductName + " (" + quantity + "개)");
@@ -251,19 +369,48 @@ public class Transform {
 				naverData.setReceiverPhone1(receiverPhone);
 				
 				// 구매수
-				int quantity = (int)row.getCell(9).getNumericCellValue();
+				int quantity = (int)row.getCell(quantityIdx).getNumericCellValue();
 				naverData.setQuantity(quantity);
 				
 				// 수취인  주소
-				naverData.setReceiverAddress(row.getCell(12).getStringCellValue());
+				naverData.setReceiverAddress(row.getCell(receiverAddressIdx).getStringCellValue());
 				
 				// 상품명
-				if (quantity == 1) naverData.setProductName(row.getCell(7).getStringCellValue() + " " + row.getCell(8).getStringCellValue());
-				else naverData.setProductName(row.getCell(7).getStringCellValue() + " " + row.getCell(8).getStringCellValue() + " (" + quantity + "개)");
+				String itemName = row.getCell(productNameIdx).getStringCellValue();
+				String tag = "네 - ";
+
+				// 옵션이 없다면
+				if (row.getCell(optionIdx) == null) {
+					// dict 들어갈 부분
+					String processedItemName = naverProductDict.get(itemName);
+					
+					// dict에 존재하는 이름이면
+					if (processedItemName != null) {
+						naverData.setProductName(tag + processedItemName);
+						naverCount.replace(processedItemName, naverCount.get(processedItemName) + quantity);
+					}
+					else naverData.setProductName(tag + itemName);
+				}
+				else {
+					// 옵션이 있다면
+					String option = row.getCell(optionIdx).getStringCellValue();
+					String processedOptionName = naverOptionDict.get(option);
+
+					if (processedOptionName != null) {
+						naverData.setProductName(tag + processedOptionName);
+						naverCount.replace(processedOptionName, naverCount.get(processedOptionName) + quantity);
+					}
+					else {
+						// dict에 없으면 기존 정책에 따라
+						if (option.contains("선택사항")) naverData.setProductName(tag + option.substring(6, option.length()));
+						else naverData.setProductName(tag + itemName + " " + option);
+					}
+				}
 				
+				if (quantity > 1) naverData.setProductName(naverData.getProductName() + " (" + quantity + "개)"); 
 				// 배송메세지
 				String deliveryMessage = "";
-				if (row.getCell(13) != null) deliveryMessage = row.getCell(13).getStringCellValue();
+				if (row.getCell(etcIdx) != null) deliveryMessage = row.getCell(etcIdx).getStringCellValue();
 				naverData.setDeliveryMessage(deliveryMessage);
 				
 				map.put(orderNum, naverData);		
@@ -343,7 +490,7 @@ public class Transform {
 		}
 		
 		// 출력 파일명 요구사항 필요
-		File xlsFile = new File(directoryURI  + LocalDate.now() + " coupangToCnpOutput.xls");
+		File xlsFile = new File(directoryURI  + LocalDate.now() + " 쿠팡 - Cnp.xls");
 		FileOutputStream fileOut = new FileOutputStream(xlsFile);
 		xlsWb.write(fileOut);	
 		fileOut.close();
@@ -383,7 +530,7 @@ public class Transform {
 		}
 		
 		// 출력 파일명 요구사항 필요
-		File xlsxFile = new File(directoryURI + LocalDate.now() + " coupangCount.xlsx");
+		File xlsxFile = new File(directoryURI + LocalDate.now() + " 쿠팡 판매량.xlsx");
 		FileOutputStream fileOut = new FileOutputStream(xlsxFile);
 		xlsxWb.write(fileOut);	
 		fileOut.close();
@@ -403,10 +550,64 @@ public class Transform {
 		return answer;
 	}
 	
+	public static void naverCount(String directoryURI, List<Pair> naverCountLs) throws IOException{
+		XSSFWorkbook xlsxWb = new XSSFWorkbook();
+		
+		// sheet 생성
+		XSSFSheet sheet = xlsxWb.createSheet(LocalDate.now() + "네이버 판매량");
+		
+		// 스타일
+		CellStyle menu = xlsxWb.createCellStyle();
+		CellStyle defaultStyle = xlsxWb.createCellStyle();
+		
+		// 줄바꿈
+		menu.setWrapText(true);
+		defaultStyle.setWrapText(true);
+		
+		// 메뉴
+		XSSFRow row = sheet.createRow(0);
+		XSSFCell cell = row.createCell(0);
+		cell.setCellValue("판매 물품 이름");
+		row.createCell(1);
+		cell.setCellValue("판매량");
+
+		for (int i = 1; i <= naverCountLs.size(); i++) {
+			Pair pair = naverCountLs.get(i - 1);
+			row = sheet.createRow(i);
+			
+			cell = row.createCell(0);
+			cell.setCellValue(pair.productName);
+			cell = row.createCell(1);
+			cell.setCellValue(pair.count);
+		}
+		
+		// 출력 파일명 요구사항 필요
+		File xlsxFile = new File(directoryURI + LocalDate.now() + " 네이버 판매량.xlsx");
+		FileOutputStream fileOut = new FileOutputStream(xlsxFile);
+		xlsxWb.write(fileOut);	
+		fileOut.close();
+	}
+	
+	public static List<Pair> naverCountList() {
+		List<Pair> answer = new ArrayList<>();
+		int total = 0;
+		for (Entry<String, Integer> entry : naverCount.entrySet()) {
+			answer.add(new Pair(entry.getKey(), entry.getValue()));
+			total += entry.getValue();
+		}
+		Collections.sort(answer);
+		
+		answer.add(new Pair("합계", total));
+		
+		return answer;
+	}
+	
+	
 	// naver -> CNP
 	public static void naverToCnp(String directoryURI, String fileName) throws IOException, FileNotFoundException, TransformationComplete {
 		// cnp input list
 		List<CnpInputDto> cnpInputLs = readNaver(directoryURI + fileName);
+		naverCount(directoryURI, naverCountList());
 		final int columnSize = 5;
 		
 		HSSFWorkbook xlsWb = new HSSFWorkbook();
@@ -457,7 +658,7 @@ public class Transform {
 		}
 		
 		// 출력 파일명 요구사항 필요
-		File xlsFile = new File(directoryURI  + LocalDate.now() + " naverToCnpOutput.xls");
+		File xlsFile = new File(directoryURI  + LocalDate.now() + " 네이버 - Cnp.xls");
 		FileOutputStream fileOut = new FileOutputStream(xlsFile);
 		xlsWb.write(fileOut);	
 		fileOut.close();
@@ -1085,7 +1286,7 @@ public class Transform {
 		}
 		
 		// 출력 파일명 요구사항 필요
-		File xlsxFile = new File(directoryURI + LocalDate.now() + " coupangOutput.xlsx");
+		File xlsxFile = new File(directoryURI + LocalDate.now() + " 쿠팡 운송장 업로드.xlsx");
 		FileOutputStream fileOut = new FileOutputStream(xlsxFile);
 		xlsxWb.write(fileOut);	
 		fileOut.close();
@@ -1283,7 +1484,7 @@ public class Transform {
 		}
 		
 		// 출력 파일명 요구사항 필요
-		File xlsxFile = new File(directoryURI + LocalDate.now() + " naverOutput.xlsx");
+		File xlsxFile = new File(directoryURI + LocalDate.now() + " 네이버 운송장 업로드.xlsx");
 		FileOutputStream fileOut = new FileOutputStream(xlsxFile);
 		xlsxWb.write(fileOut);	
 		fileOut.close();	
