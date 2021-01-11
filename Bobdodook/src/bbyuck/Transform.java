@@ -675,14 +675,71 @@ public class Transform {
 		XSSFSheet sheet = workbook.getSheetAt(0); // 해당 엑셀파일의 시트수
 		int rows = sheet.getPhysicalNumberOfRows(); // 해당 시트의 행의 개수
 //		System.out.println(rows);
+		XSSFRow row = sheet.getRow(0);
+		int cells = row.getPhysicalNumberOfCells();
 		
+		int idxA = -1, idxB = -1, idxC = -1, idxD = -1, idxE = -1, idxF = -1, idxG = -1, idxH = -1, idxI = -1,
+				idxJ = -1, idxK = -1, idxL = -1, idxM = -1,
+				idxN = -1, idxO = -1, idxP = -1, idxQ = -1, 
+				idxR = -1, idxS = -1, idxT = -1, idxU = -1, 
+				idxV = -1, idxW = -1, idxX = -1, idxY = -1, 
+				idxZ = -1, idxAA = -1, 
+				idxAB = -1, idxAC = -1, idxAD = -1, idxAE = -1,
+				idxAF = -1, idxAG = -1, idxAH = -1, idxAI = -1, 
+				idxAJ = -1, idxAK = -1, idxAL = -1, idxAM = -1, idxAN= -1;
+		
+		for (int colIdx = 0; colIdx < cells; colIdx++) {
+			String menu = row.getCell(colIdx).getStringCellValue();
+			
+			if (menu.equals("번호")) idxA = colIdx;
+			if (menu.equals("묶음배송번호")) idxB = colIdx;
+			if (menu.equals("주문번호")) idxC = colIdx;
+			if (menu.equals("택배사")) idxD = colIdx;
+			if (menu.equals("운송장번호")) idxE = colIdx;
+			if (menu.equals("분리배송 Y/N")) idxF = colIdx;
+			if (menu.equals("분리배송 출고예정일")) idxG = colIdx;
+			if (menu.equals("주문시 출고예정일")) idxH = colIdx;
+			if (menu.equals("출고일(발송일)")) idxI = colIdx;
+			if (menu.equals("주문일")) idxJ = colIdx;
+			if (menu.equals("등록상품명")) idxK = colIdx;
+			if (menu.equals("등록옵션명")) idxL = colIdx;
+			if (menu.equals("노출상품명(옵션명)")) idxM = colIdx;
+			if (menu.equals("노출상품ID")) idxN = colIdx;
+			if (menu.equals("옵션ID")) idxO = colIdx;
+			if (menu.equals("최초등록옵션명")) idxP = colIdx;
+			if (menu.equals("업체상품코드")) idxQ = colIdx;
+			if (menu.equals("바코드")) idxR = colIdx;
+			if (menu.equals("결제액")) idxS = colIdx;
+			if (menu.equals("배송비구분")) idxT = colIdx;
+			if (menu.equals("배송비")) idxU = colIdx;
+			if (menu.equals("도서산간 추가배송비")) idxV = colIdx;
+			if (menu.equals("구매수(수량)")) idxW = colIdx;
+			if (menu.equals("옵션판매가(판매단가)")) idxX = colIdx;
+			if (menu.equals("구매자")) idxY = colIdx;
+			if (menu.equals("구매자전화번호")) idxZ = colIdx;
+			if (menu.equals("수취인이름")) idxAA = colIdx;
+			if (menu.equals("수취인전화번호")) idxAB = colIdx;
+			if (menu.equals("우편번호")) idxAC = colIdx;
+			if (menu.equals("수취인 주소")) idxAD = colIdx;
+			if (menu.equals("배송메세지")) idxAE = colIdx;
+			if (menu.equals("상품별 추가메시지")) idxAF = colIdx;
+			if (menu.equals("주문자 추가메시지")) idxAG = colIdx;
+			if (menu.equals("배송완료일")) idxAH = colIdx;
+			if (menu.equals("구매확정일자")) idxAI = colIdx;
+			if (menu.equals("개인통관번호(PCCC)")) idxAJ = colIdx;
+			if (menu.equals("통관용구매자전화번호")) idxAK = colIdx;
+			if (menu.equals("기타")) idxAL = colIdx;
+			if (menu.equals("결제위치")) idxAM = colIdx;
+
+		}
+		
+
 		// 파싱
 		for (int rowIdx = 1; rowIdx < rows; rowIdx++) {
-			XSSFRow row = sheet.getRow(rowIdx); // 각 행을 읽어온다
+			row = sheet.getRow(rowIdx); // 각 행을 읽어온다
 			CoupangColumnDto coupangData = new CoupangColumnDto();
 			
 			if (row != null) {
-				int cells = row.getPhysicalNumberOfCells();
 				
 				int thisNum = 0;
 				String shippingNum = "";
@@ -725,65 +782,64 @@ public class Transform {
 				String etc = "";
 				String paymentLocation = "";
 				
-				if (row.getCell(0) != null)	thisNum = Integer.parseInt(row.getCell(0).getStringCellValue());
+				if (row.getCell(idxA) != null)	thisNum = Integer.parseInt(row.getCell(idxA).getStringCellValue());
 				else throw new IOException();
-				if (row.getCell(1) != null) shippingNum = row.getCell(1).getStringCellValue();
+				if (row.getCell(idxB) != null) shippingNum = row.getCell(idxB).getStringCellValue();
 				else throw new IOException();
-				if (row.getCell(2) != null) orderNum = row.getCell(2).getStringCellValue();
+				if (row.getCell(idxC) != null) orderNum = row.getCell(idxC).getStringCellValue();
 				else throw new IOException();
 				
-				if (row.getCell(3) != null) courier = row.getCell(3).getStringCellValue();
-				if (row.getCell(4) != null) waybillNum = row.getCell(4).getStringCellValue();
-				if (row.getCell(5) != null) separateDelivery = row.getCell(5).getStringCellValue();				
-				if (row.getCell(6) != null) separateExpectedDeliveryDate = row.getCell(6).getStringCellValue();
-				if (row.getCell(7) != null) expectedDeliveryDate = row.getCell(7).getStringCellValue();
-				if (row.getCell(8) != null) deliveryDate = row.getCell(8).getStringCellValue();				
-				if (row.getCell(9) != null) orderDate = row.getCell(9).getStringCellValue();
-				if (row.getCell(10) != null) productName = row.getCell(10).getStringCellValue();				
-				if (row.getCell(11) != null) optionName = row.getCell(11).getStringCellValue();				
-				if (row.getCell(12) != null) displayedProductName = row.getCell(12).getStringCellValue();
-				if (row.getCell(13) != null) displayedProductId = row.getCell(13).getStringCellValue();
-				if (row.getCell(14) != null) optionId = row.getCell(14).getStringCellValue();
-				if (row.getCell(15) != null) firstOptionName = row.getCell(15).getStringCellValue();
-				if (row.getCell(16) != null) productCode = row.getCell(16).getStringCellValue();
-				if (row.getCell(17) != null) barcode = row.getCell(17).getStringCellValue();
+				if (row.getCell(idxD) != null) courier = row.getCell(idxD).getStringCellValue();
+				if (row.getCell(idxE) != null) waybillNum = row.getCell(idxE).getStringCellValue();
+				if (row.getCell(idxF) != null) separateDelivery = row.getCell(idxF).getStringCellValue();				
+				if (row.getCell(idxG) != null) separateExpectedDeliveryDate = row.getCell(idxG).getStringCellValue();
+				if (row.getCell(idxH) != null) expectedDeliveryDate = row.getCell(idxH).getStringCellValue();
+				if (row.getCell(idxI) != null) deliveryDate = row.getCell(idxI).getStringCellValue();				
+				if (row.getCell(idxJ) != null) orderDate = row.getCell(idxJ).getStringCellValue();
+				if (row.getCell(idxK) != null) productName = row.getCell(idxK).getStringCellValue();				
+				if (row.getCell(idxL) != null) optionName = row.getCell(idxL).getStringCellValue();				
+				if (row.getCell(idxM) != null) displayedProductName = row.getCell(idxM).getStringCellValue();
+				if (row.getCell(idxN) != null) displayedProductId = row.getCell(idxN).getStringCellValue();
+				if (row.getCell(idxO) != null) optionId = row.getCell(idxO).getStringCellValue();
+				if (row.getCell(idxP) != null) firstOptionName = row.getCell(idxP).getStringCellValue();
+				if (row.getCell(idxQ) != null) productCode = row.getCell(idxQ).getStringCellValue();
+				if (row.getCell(idxR) != null) barcode = row.getCell(idxR).getStringCellValue();
 				
-				if (row.getCell(18) != null) payment = Integer.parseInt(row.getCell(18).getStringCellValue());
+				if (row.getCell(idxS) != null) payment = Integer.parseInt(row.getCell(idxS).getStringCellValue());
 				else throw new IOException();
-				if (row.getCell(19) != null) deliveryFeeFlag = row.getCell(19).getStringCellValue();
+				if (row.getCell(idxT) != null) deliveryFeeFlag = row.getCell(idxT).getStringCellValue();
 				else throw new IOException();
-				if (row.getCell(20) != null) deliveryFee = Integer.parseInt(row.getCell(20).getStringCellValue());
+				if (row.getCell(idxU) != null) deliveryFee = Integer.parseInt(row.getCell(idxU).getStringCellValue());
 				else throw new IOException();
-				if (row.getCell(21) != null) additionalDeliveryFee = Integer.parseInt(row.getCell(21).getStringCellValue());
+				if (row.getCell(idxV) != null) additionalDeliveryFee = Integer.parseInt(row.getCell(idxV).getStringCellValue());
 				else throw new IOException();
-				if (row.getCell(22) != null) quantity = Integer.parseInt(row.getCell(22).getStringCellValue());
+				if (row.getCell(idxW) != null) quantity = Integer.parseInt(row.getCell(idxW).getStringCellValue());
 				else throw new IOException();				
-				if (row.getCell(23) != null) unitPrice = Integer.parseInt(row.getCell(23).getStringCellValue());
+				if (row.getCell(idxX) != null) unitPrice = Integer.parseInt(row.getCell(idxX).getStringCellValue());
 				else throw new IOException();
 				
-				if (row.getCell(24) != null) customerName = row.getCell(24).getStringCellValue();				
-				if (row.getCell(25) != null) customerEmail = row.getCell(25).getStringCellValue();
-				if (row.getCell(26) != null) customerPhone = row.getCell(26).getStringCellValue();
+				if (row.getCell(idxY) != null) customerName = row.getCell(idxY).getStringCellValue();				
+				if (row.getCell(idxZ) != null) customerPhone = row.getCell(idxZ).getStringCellValue();
 				else throw new IOException();
 				
-				if (row.getCell(27) != null) receiverName = row.getCell(27).getStringCellValue();
+				if (row.getCell(idxAA) != null) receiverName = row.getCell(idxAA).getStringCellValue();
 				else throw new IOException();
 				
-				if (row.getCell(28) != null) receiverPhone = row.getCell(28).getStringCellValue();
+				if (row.getCell(idxAB) != null) receiverPhone = row.getCell(idxAB).getStringCellValue();
 
-				if (row.getCell(29) != null) postNum = row.getCell(29).getStringCellValue();
+				if (row.getCell(idxAC) != null) postNum = row.getCell(idxAC).getStringCellValue();
 				else throw new IOException();
 
-				if (row.getCell(30) != null) receiverAddress = row.getCell(30).getStringCellValue();
-				if (row.getCell(31) != null) deliveryMessage = row.getCell(31).getStringCellValue();
-				if (row.getCell(32) != null) additionalMessagePerItem = row.getCell(32).getStringCellValue();
-				if (row.getCell(33) != null) ordererAdditionalMessage = row.getCell(33).getStringCellValue();
-				if (row.getCell(34) != null) deliveryCompleteDate = row.getCell(34).getStringCellValue();
-				if (row.getCell(35) != null) confirmationPurchaseDate = row.getCell(35).getStringCellValue();
-				if (row.getCell(36) != null) pccc = row.getCell(36).getStringCellValue();
-				if (row.getCell(37) != null) buyerPhoneNumForCustomsClearance = row.getCell(37).getStringCellValue();
-				if (row.getCell(38) != null) etc = row.getCell(38).getStringCellValue();
-				if (row.getCell(39) != null) paymentLocation = row.getCell(39).getStringCellValue();
+				if (row.getCell(idxAD) != null) receiverAddress = row.getCell(idxAD).getStringCellValue();
+				if (row.getCell(idxAE) != null) deliveryMessage = row.getCell(idxAE).getStringCellValue();
+				if (row.getCell(idxAF) != null) additionalMessagePerItem = row.getCell(idxAF).getStringCellValue();
+				if (row.getCell(idxAG) != null) ordererAdditionalMessage = row.getCell(idxAG).getStringCellValue();
+				if (row.getCell(idxAH) != null) deliveryCompleteDate = row.getCell(idxAH).getStringCellValue();
+				if (row.getCell(idxAI) != null) confirmationPurchaseDate = row.getCell(idxAI).getStringCellValue();
+				if (row.getCell(idxAJ) != null) pccc = row.getCell(idxAJ).getStringCellValue();
+				if (row.getCell(idxAK) != null) buyerPhoneNumForCustomsClearance = row.getCell(idxAK).getStringCellValue();
+				if (row.getCell(idxAL) != null) etc = row.getCell(idxAL).getStringCellValue();
+				if (row.getCell(idxAM) != null) paymentLocation = row.getCell(idxAM).getStringCellValue();
 				
 				coupangData.setNum(thisNum);
 				coupangData.setShippingNum(shippingNum);
@@ -844,7 +900,7 @@ public class Transform {
 //		System.out.println(rows);
 		
 		// 파싱
-		for (int rowIdx = 1; rowIdx < rows; rowIdx++) {
+		for (int rowIdx = 2; rowIdx < rows; rowIdx++) {
 			XSSFRow row = sheet.getRow(rowIdx); // 각 행을 읽어온다
 			NaverColumnDto naverData = new NaverColumnDto();
 			
