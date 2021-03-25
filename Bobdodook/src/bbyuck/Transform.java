@@ -46,7 +46,7 @@ public class Transform {
 	// 쿠팡 제목 바꾸는 엑셀파일
 	private static final String COUPANG_DICT_URI = "./coupangDict.xlsx";
 	private static final String NAVER_DICT_URI = "./naverDict.xlsx";
-	private static final String TEST_COUPANG = "C:\\Users\\k9410\\OneDrive\\바탕 화면\\밥도둑세상 프로젝트\\상품명.xlsx";
+	private static final String TEST_COUPANG = "C:\\Users\\k9410\\OneDrive\\바탕 화면\\밥도둑세상 프로젝트\\coupangDict.xlsx";
 	private static final String TEST_NAVER = "C:\\Users\\k9410\\OneDrive\\바탕 화면\\밥도둑세상 프로젝트\\naverDict.xlsx";
 	private static final Integer COUPANG_OPTION_START_IDX = 10;
 	private static final String COURIER = "CJ대한통운";
@@ -70,8 +70,8 @@ public class Transform {
 	}
 	
 	private static void readNaverProducts() throws IOException {
-		FileInputStream fi = new FileInputStream(NAVER_DICT_URI);
-//		FileInputStream fi = new FileInputStream(TEST_NAVER);
+//		FileInputStream fi = new FileInputStream(NAVER_DICT_URI);
+		FileInputStream fi = new FileInputStream(TEST_NAVER);
 		@SuppressWarnings("resource")
 		XSSFWorkbook workbook = new XSSFWorkbook(fi);
 		XSSFSheet sheet = workbook.getSheetAt(0); // 해당 엑셀파일의 시트수
@@ -106,8 +106,8 @@ public class Transform {
 	}
 	
 	private static void readCoupangProducts() throws IOException {
-		FileInputStream fi = new FileInputStream(COUPANG_DICT_URI);
-//		FileInputStream fi = new FileInputStream(TEST_COUPANG);
+//		FileInputStream fi = new FileInputStream(COUPANG_DICT_URI);
+		FileInputStream fi = new FileInputStream(TEST_COUPANG);
 		@SuppressWarnings("resource")
 		XSSFWorkbook workbook = new XSSFWorkbook(fi);
 		XSSFSheet sheet = workbook.getSheetAt(0); // 해당 엑셀파일의 시트수
@@ -234,7 +234,7 @@ public class Transform {
 				String val = coupangDict.get(productName);
 				String ans = "쿠 - ";
 				// 선택사항
-				if (productName.contains("선택사항")) {
+ 				if (productName.contains("선택사항")) {
 					String[] options = productName.split(",");
 					String option = options[options.length - 1];
 					ans += option.substring(COUPANG_OPTION_START_IDX, option.length() - 2);
@@ -1353,7 +1353,7 @@ public class Transform {
 		XSSFWorkbook xlsxWb = new XSSFWorkbook();
 		
 		// sheet 생성
-		XSSFSheet sheet = xlsxWb.createSheet("배송관리");
+		XSSFSheet sheet = xlsxWb.createSheet("발송처리");
 		
 		// 스타일
 		CellStyle menu = xlsxWb.createCellStyle();
