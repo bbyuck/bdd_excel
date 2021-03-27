@@ -39,7 +39,7 @@
     <cp>bdd_excel_lib/xmlbeans-3.1.0.jar</cp>
   </classPath>
   <jre>
-    <path>jre</path>
+    <path>./jre</path>
     <bundledJre64Bit>true</bundledJre64Bit>
     <bundledJreAsFallback>false</bundledJreAsFallback>
     <minVersion></minVersion>

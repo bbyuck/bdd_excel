@@ -49,7 +49,7 @@ public class Transform {
 	private static final String TEST_COUPANG = "C:\\Users\\k9410\\OneDrive\\바탕 화면\\밥도둑세상 프로젝트\\coupangDict.xlsx";
 	private static final String TEST_NAVER = "C:\\Users\\k9410\\OneDrive\\바탕 화면\\밥도둑세상 프로젝트\\naverDict.xlsx";
 	private static final Integer COUPANG_OPTION_START_IDX = 10;
-	private static final String COURIER = "CJ대한통운";
+	private static final String COURIER = "로젠택배";
 
 	private static void test() {
 		for (Entry<String, String> entry : coupangDict.entrySet()) {
@@ -70,8 +70,8 @@ public class Transform {
 	}
 	
 	private static void readNaverProducts() throws IOException {
-//		FileInputStream fi = new FileInputStream(NAVER_DICT_URI);
-		FileInputStream fi = new FileInputStream(TEST_NAVER);
+		FileInputStream fi = new FileInputStream(NAVER_DICT_URI);
+//		FileInputStream fi = new FileInputStream(TEST_NAVER);
 		@SuppressWarnings("resource")
 		XSSFWorkbook workbook = new XSSFWorkbook(fi);
 		XSSFSheet sheet = workbook.getSheetAt(0); // 해당 엑셀파일의 시트수
@@ -106,8 +106,8 @@ public class Transform {
 	}
 	
 	private static void readCoupangProducts() throws IOException {
-//		FileInputStream fi = new FileInputStream(COUPANG_DICT_URI);
-		FileInputStream fi = new FileInputStream(TEST_COUPANG);
+		FileInputStream fi = new FileInputStream(COUPANG_DICT_URI);
+//		FileInputStream fi = new FileInputStream(TEST_COUPANG);
 		@SuppressWarnings("resource")
 		XSSFWorkbook workbook = new XSSFWorkbook(fi);
 		XSSFSheet sheet = workbook.getSheetAt(0); // 해당 엑셀파일의 시트수
@@ -143,6 +143,7 @@ public class Transform {
 	public static List<CnpInputDto> readCoupang(String fileURI) throws IOException {
 		List<CnpInputDto> answer = new ArrayList<>();
 		List<CoupangColumnDto> coupangLs = new ArrayList<>();
+		Map<String, CoupangColumnDto> ansMap = new HashMap<>();
 		
 		FileInputStream fi = new FileInputStream(fileURI);
 		@SuppressWarnings("resource")
@@ -166,7 +167,7 @@ public class Transform {
 			XSSFCell cell = row.getCell(colIdx);
 			String menu = cell.getStringCellValue();
 			if (menu.equals("구매수(수량)")) quantityIdx = colIdx;
-			if (menu.equals("번호")) idIdx = colIdx;
+			if (menu.equals("묶음배송번호")) idIdx = colIdx;
 			if (menu.equals("수취인이름")) receiverNameIdx = colIdx;
 			if (menu.equals("수취인전화번호")) receiverPhoneIdx = colIdx;
 			if (menu.equals("수취인 주소")) receiverAddressIdx = colIdx;
@@ -185,12 +186,15 @@ public class Transform {
 				String productName = row.getCell(12).getStringCellValue();
 				
 				// 셀에 담겨있는 값을 읽는다.
-				// 번호
-				Integer thisNum = Integer.parseInt(row.getCell(idIdx).getStringCellValue());
+				// 묶음 배송 번호
+				String setId = row.getCell(idIdx).getStringCellValue();
 				// 묶음 배송
-				if (thisNum.equals(coupangLs.size())) {
-					// 주문 내용 변경하는 로직(아마 기존 ls에서 get해서 그 object 꺼내와서 거기에 concat 하는 방식)
-					coupangData = coupangLs.get(thisNum - 1);
+				// 맵에 있는지?
+				
+				CoupangColumnDto inValue = ansMap.get(setId);
+				
+				if (inValue != null) {
+					coupangData = inValue;
 					String displayedProductName = coupangData.getDisplayedProductName();
 					
 					String thisRowDisplayedProductName = row.getCell(productNameIdx).getStringCellValue();
@@ -214,7 +218,7 @@ public class Transform {
 					
 					continue;
 				}
-				coupangData.setNum(thisNum);
+//				coupangData.setShippingNum(setId);
 				
 				// 구매수
 				int quantity = Integer.parseInt(row.getCell(quantityIdx).getStringCellValue());
@@ -256,12 +260,15 @@ public class Transform {
 				else coupangData.setDisplayedProductName(ans + " (" + quantity + "개)");
 				// 배송메세지
 				coupangData.setDeliveryMessage(row.getCell(etcIdx).getStringCellValue());
+				ansMap.put(setId, coupangData);
 				coupangLs.add(coupangData);
 			}
 		}
 		
+		
 		for (CoupangColumnDto coupangData : coupangLs) {
 			CnpInputDto cnpInput = new CnpInputDto();
+			
 			cnpInput.setReceiverName(coupangData.getReceiverName());
 			cnpInput.setReceiverPhone(coupangData.getReceiverPhone());
 			cnpInput.setReceiverAddress(coupangData.getReceiverAddress());
@@ -270,12 +277,13 @@ public class Transform {
 			
 			answer.add(cnpInput);
 		}
+		
 		return answer;
 	}
 	public static List<CnpInputDto> readNaver(String fileURI) throws IOException {
 		List<CnpInputDto> answer = new ArrayList<>();
 		List<NaverColumnDto> naverLs = new ArrayList<>();
-		HashMap<String, NaverColumnDto> map = new HashMap<>();
+		Map<String, NaverColumnDto> map = new HashMap<>();
 		
 		FileInputStream fi = new FileInputStream(fileURI);
 		@SuppressWarnings("resource")
@@ -498,6 +506,73 @@ public class Transform {
 		throw new TransformationComplete();
 	}
 	
+	// coupang -> Logen
+	public static void coupangToLogen(String directoryURI, String fileName) throws IOException, FileNotFoundException, TransformationComplete {
+		// cnp input list
+		List<CnpInputDto> cnpInputLs = readCoupang(directoryURI + fileName);
+		List<Pair> coupangCountLs = coupangCountList();
+		coupangCount(directoryURI, coupangCountLs);
+		
+		final int columnSize = 5;
+		
+		HSSFWorkbook xlsWb = new HSSFWorkbook();
+		
+		// sheet 생성
+		HSSFSheet sheet = xlsWb.createSheet("배송관리");
+		
+		// 스타일
+		CellStyle menu = xlsWb.createCellStyle();
+		CellStyle defaultStyle = xlsWb.createCellStyle();
+		
+		
+		// 줄바꿈
+		menu.setWrapText(true);
+		defaultStyle.setWrapText(true);
+		
+		// 메뉴
+		HSSFRow row = sheet.createRow(0);
+		HSSFCell cell = row.createCell(0);
+		
+		cell.setCellValue("이름");
+		
+		cell = row.createCell(1);
+		cell.setCellValue("전화번호");
+		cell = row.createCell(2);
+		cell.setCellValue("주소");
+		cell = row.createCell(3);
+		cell.setCellValue("품목");
+		cell = row.createCell(4);
+		cell.setCellValue("");
+		
+		for (int i = 1; i <= cnpInputLs.size(); i++) {
+			CnpInputDto cnpInput = cnpInputLs.get(i - 1);
+			row = sheet.createRow(i);
+			
+			cell = row.createCell(0);
+			cell.setCellValue(cnpInput.getReceiverName());
+			
+			cell = row.createCell(1);
+			cell.setCellValue(cnpInput.getReceiverPhone());
+			
+			cell = row.createCell(2);
+			cell.setCellValue(cnpInput.getReceiverAddress());
+			
+			cell = row.createCell(3);
+			cell.setCellValue(cnpInput.getOrderContents());
+			
+			cell = row.createCell(4);
+			cell.setCellValue(cnpInput.getRemark());
+		}
+		
+		// 출력 파일명 요구사항 필요
+		File xlsFile = new File(directoryURI  + LocalDate.now() + " 쿠팡 - 로젠.xls");
+		FileOutputStream fileOut = new FileOutputStream(xlsFile);
+		xlsWb.write(fileOut);	
+		fileOut.close();
+		
+		throw new TransformationComplete();
+	}
+	
 	public static void coupangCount(String directoryURI, List<Pair> coupangCountLs) throws IOException{
 		XSSFWorkbook xlsxWb = new XSSFWorkbook();
 		
@@ -534,6 +609,8 @@ public class Transform {
 		FileOutputStream fileOut = new FileOutputStream(xlsxFile);
 		xlsxWb.write(fileOut);	
 		fileOut.close();
+		
+		init();
 	}
 	
 	public static List<Pair> coupangCountList() {
@@ -586,6 +663,8 @@ public class Transform {
 		FileOutputStream fileOut = new FileOutputStream(xlsxFile);
 		xlsxWb.write(fileOut);	
 		fileOut.close();
+		
+		init();
 	}
 	
 	public static List<Pair> naverCountList() {
@@ -666,6 +745,68 @@ public class Transform {
 		throw new TransformationComplete();
 	}
 	
+	// naver -> Logen
+	public static void naverToLogen(String directoryURI, String fileName) throws IOException, FileNotFoundException, TransformationComplete {
+		// cnp input list
+		List<CnpInputDto> cnpInputLs = readNaver(directoryURI + fileName);
+		naverCount(directoryURI, naverCountList());
+		final int columnSize = 5;
+		
+		HSSFWorkbook xlsWb = new HSSFWorkbook();
+		
+		// sheet 생성
+		HSSFSheet sheet = xlsWb.createSheet("배송관리");
+		
+		// 스타일
+		CellStyle menu = xlsWb.createCellStyle();
+		CellStyle defaultStyle = xlsWb.createCellStyle();
+		
+		// 줄바꿈
+		menu.setWrapText(true);
+		defaultStyle.setWrapText(true);
+		
+		// 메뉴
+		HSSFRow row = sheet.createRow(0);
+		HSSFCell cell = row.createCell(0);
+		cell.setCellValue("이름");
+		
+		cell = row.createCell(1);
+		cell.setCellValue("전화번호");
+		cell = row.createCell(2);
+		cell.setCellValue("주소");
+		cell = row.createCell(3);
+		cell.setCellValue("품목");
+		cell = row.createCell(4);
+		cell.setCellValue("");
+		
+		for (int i = 1; i <= cnpInputLs.size(); i++) {
+			CnpInputDto cnpInput = cnpInputLs.get(i - 1);
+			row = sheet.createRow(i);
+			
+			cell = row.createCell(0);
+			cell.setCellValue(cnpInput.getReceiverName());
+			
+			cell = row.createCell(1);
+			cell.setCellValue(cnpInput.getReceiverPhone());
+			
+			cell = row.createCell(2);
+			cell.setCellValue(cnpInput.getReceiverAddress());
+			
+			cell = row.createCell(3);
+			cell.setCellValue(cnpInput.getOrderContents());
+			
+			cell = row.createCell(4);
+			cell.setCellValue(cnpInput.getRemark());
+		}
+		
+		// 출력 파일명 요구사항 필요
+		File xlsFile = new File(directoryURI  + LocalDate.now() + " 네이버 - 로젠.xls");
+		FileOutputStream fileOut = new FileOutputStream(xlsFile);
+		xlsWb.write(fileOut);	
+		fileOut.close();
+		
+		throw new TransformationComplete();
+	}
 	public static List<CoupangColumnDto> readCoupangForBillway(String fileURI) throws IOException {
 		List<CoupangColumnDto> answer = new ArrayList<>();
 		
@@ -1111,6 +1252,95 @@ public class Transform {
 		}
 		return answer;
 	}
+	
+	public static Map<String, String> readLogen(String fileURI) throws IOException {
+		Map<String, String> answer = new HashMap<>();
+		FileInputStream fi = new FileInputStream(fileURI);
+		
+		@SuppressWarnings("resource")
+		HSSFWorkbook workbook = new HSSFWorkbook(fi);
+		HSSFSheet sheet = workbook.getSheetAt(0); // 해당 엑셀파일의 시트수
+		int rows = sheet.getPhysicalNumberOfRows(); // 해당 시트의 행의 개수
+//		System.out.println(rows);
+		
+		// 파싱
+		for (int rowIdx = 4; rowIdx < rows; rowIdx++) {
+			HSSFRow row = sheet.getRow(rowIdx); // 각 행을 읽어온다
+			CnpOutputDto cnpOutput = new CnpOutputDto();
+			
+			
+			if (row != null) {				
+				// 셀에 담겨있는 값을 읽는다.
+				String waybillNum = row.getCell(3).getStringCellValue();
+				String receiverName = row.getCell(6).getStringCellValue();
+				String receiverPhone = row.getCell(11).getStringCellValue();
+				String processedPhone = "";
+				for (int i = 0; i < receiverPhone.length(); i++) {
+					if (receiverPhone.charAt(i) != '-') processedPhone += receiverPhone.charAt(i);
+				}
+//				System.out.println(processedPhone);
+
+				answer.put(receiverName + processedPhone, waybillNum);
+			}
+		}
+		return answer;
+	}
+	
+	public static void logenToCoupang(String coupangDirectoryURI, String coupangFileName, String logenDirectoryURI, String logenFileName) throws IOException, TransformationComplete {
+		List<CoupangColumnDto> coupangLs = readCoupangForBillway(coupangDirectoryURI + coupangFileName);
+		Map<String, String> customerToWaybill = readLogen(logenDirectoryURI + logenFileName);
+		
+		for (CoupangColumnDto coupangData : coupangLs) {
+			String processedPhone = coupangData.getReceiverPhone().substring(0, coupangData.getReceiverPhone().length() - 3);
+			processedPhone += "***";
+//			System.out.println(processedPhone);
+			String key = coupangData.getReceiverName() + processedPhone;
+			coupangData.setWaybillNum(customerToWaybill.get(key));
+		}
+		outputCoupang(coupangDirectoryURI, coupangLs);
+		throw new TransformationComplete();
+	}
+	
+	public static void logenToNaver(String naverDirectoryURI, String naverFileName, String logenDirectoryURI, String logenFileName) throws IOException, TransformationComplete {
+		List<NaverColumnDto> naverLs = readNaverForBillway(naverDirectoryURI + naverFileName);
+		Map<String, String> customerToWaybill = readLogen(logenDirectoryURI + logenFileName);
+		
+		for (NaverColumnDto naverData : naverLs) {
+			String processedPhone = naverData.getReceiverPhone1().substring(0, naverData.getReceiverPhone1().length() - 3);
+			processedPhone += "***";
+			String key = naverData.getReceiverName() + processedPhone;
+			naverData.setWaybillNum(customerToWaybill.get(key));
+		}
+		outputNaver(naverDirectoryURI, naverLs);
+		throw new TransformationComplete();
+	}
+
+	public static void logenToBoth(String coupangDirectoryURI, String coupangFileName, String naverDirectoryURI, String naverFileName, String logenDirectoryURI, String logenFileName) throws IOException, TransformationComplete {
+		List<CoupangColumnDto> coupangLs = readCoupangForBillway(coupangDirectoryURI + coupangFileName);
+		List<NaverColumnDto> naverLs = readNaverForBillway(naverDirectoryURI + naverFileName);
+		Map<String, String> customerToWaybill = readLogen(logenDirectoryURI + logenFileName);
+		
+		for (CoupangColumnDto coupangData : coupangLs) {
+			String processedPhone = coupangData.getReceiverPhone().substring(0, coupangData.getReceiverPhone().length() - 3);
+			processedPhone += "***";
+			String key = coupangData.getReceiverName() + processedPhone;
+			coupangData.setWaybillNum(customerToWaybill.get(key));
+		}
+		
+		for (NaverColumnDto naverData : naverLs) {
+			String processedPhone = naverData.getReceiverPhone1().substring(0, naverData.getReceiverPhone1().length() - 3);
+			processedPhone += "***";
+			String key = naverData.getReceiverName() + processedPhone;
+			naverData.setWaybillNum(customerToWaybill.get(key));
+		}
+		
+		// 각각 쿠팡, 네이버 출력
+		outputCoupang(coupangDirectoryURI, coupangLs);
+		outputNaver(naverDirectoryURI, naverLs);
+		
+		throw new TransformationComplete();
+	}
+	
 	
 	public static void cnpToBoth(String coupangDirectoryURI, String coupangFileName, String naverDirectoryURI, String naverFileName, String cnpDirectoryURI, String cnpFileName) throws IOException, TransformationComplete {
 		List<CoupangColumnDto> coupangLs = readCoupangForBillway(coupangDirectoryURI + coupangFileName);
