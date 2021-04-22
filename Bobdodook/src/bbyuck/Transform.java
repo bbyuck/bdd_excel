@@ -70,8 +70,8 @@ public class Transform {
 	}
 	
 	private static void readNaverProducts() throws IOException {
-		FileInputStream fi = new FileInputStream(NAVER_DICT_URI);
-//		FileInputStream fi = new FileInputStream(TEST_NAVER);
+//		FileInputStream fi = new FileInputStream(NAVER_DICT_URI);
+		FileInputStream fi = new FileInputStream(TEST_NAVER);
 		@SuppressWarnings("resource")
 		XSSFWorkbook workbook = new XSSFWorkbook(fi);
 		XSSFSheet sheet = workbook.getSheetAt(0); // 해당 엑셀파일의 시트수
@@ -106,8 +106,8 @@ public class Transform {
 	}
 	
 	private static void readCoupangProducts() throws IOException {
-		FileInputStream fi = new FileInputStream(COUPANG_DICT_URI);
-//		FileInputStream fi = new FileInputStream(TEST_COUPANG);
+//		FileInputStream fi = new FileInputStream(COUPANG_DICT_URI);
+		FileInputStream fi = new FileInputStream(TEST_COUPANG);
 		@SuppressWarnings("resource")
 		XSSFWorkbook workbook = new XSSFWorkbook(fi);
 		XSSFSheet sheet = workbook.getSheetAt(0); // 해당 엑셀파일의 시트수
